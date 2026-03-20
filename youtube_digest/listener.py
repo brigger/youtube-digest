@@ -113,8 +113,12 @@ def check_inbox(cfg: dict) -> list[tuple]:
             subject = _decode_header(msg.get("Subject", ""))
             body = _get_body(msg)
 
-            # Only process replies to our digests (or any email with actual content)
-            if not body:
+            # Only process replies to our digest emails
+            is_reply = subject.lower().startswith("re:")
+            is_digest = "youtube digest" in subject.lower() or "mady morrison" in subject.lower()
+            has_reply_to = msg.get("In-Reply-To") is not None
+
+            if not body or not (is_reply and (is_digest or has_reply_to)):
                 continue
 
             results.append((uid.decode(), from_addr, subject, body))
