@@ -1,7 +1,10 @@
 """Fetch latest N videos and transcripts from a YouTube channel."""
 
 import json
+import os
+import re
 import sys
+import tempfile
 
 
 def fetch_latest_videos(channel_url: str, count: int = 3) -> list[dict]:
@@ -42,29 +45,58 @@ def fetch_latest_videos(channel_url: str, count: int = 3) -> list[dict]:
     return videos
 
 
-def fetch_transcript(video_id: str) -> dict:
-    from youtube_transcript_api import YouTubeTranscriptApi
-    from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
+def _parse_vtt(vtt: str) -> str:
+    """Extract plain text from a WebVTT subtitle file, deduplicating lines."""
+    lines = []
+    seen = set()
+    for line in vtt.splitlines():
+        line = line.strip()
+        if not line or line.startswith("WEBVTT") or "-->" in line or line.startswith("NOTE"):
+            continue
+        text = re.sub(r"<[^>]+>", "", line).strip()
+        if text and text not in seen:
+            seen.add(text)
+            lines.append(text)
+    return " ".join(lines)
 
-    api = YouTubeTranscriptApi()
-    try:
-        transcript_list = api.list(video_id)
+
+def fetch_transcript(video_id: str) -> dict:
+    """Fetch transcript via yt-dlp subtitle download (works from VPS/cloud IPs)."""
+    import yt_dlp
+
+    url = f"https://www.youtube.com/watch?v={video_id}"
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ydl_opts = {
+            "skip_download": True,
+            "writeautomaticsub": True,
+            "writesubtitles": True,
+            "subtitlesformat": "vtt",
+            "subtitleslangs": ["en", "de", "en-orig"],
+            "outtmpl": os.path.join(tmpdir, "%(id)s.%(ext)s"),
+            "quiet": True,
+            "no_warnings": True,
+        }
+
         try:
-            t = transcript_list.find_manually_created_transcript(["en"])
-        except NoTranscriptFound:
-            try:
-                t = transcript_list.find_generated_transcript(["en"])
-            except NoTranscriptFound:
-                t = next(iter(transcript_list))
-        data = t.fetch()
-        text = " ".join(s.text for s in data)
-        return {"text": text, "language": t.language}
-    except TranscriptsDisabled:
-        return {"text": "[Transcript unavailable: subtitles disabled]", "language": ""}
-    except StopIteration:
-        return {"text": "[Transcript unavailable: no transcripts found]", "language": ""}
-    except Exception as e:
-        return {"text": f"[Error fetching transcript: {e}]", "language": ""}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+        except Exception as e:
+            return {"text": f"[Error downloading subtitles: {e}]", "language": ""}
+
+        # Find the first VTT file written
+        vtt_files = [f for f in os.listdir(tmpdir) if f.endswith(".vtt")]
+        if not vtt_files:
+            return {"text": "[Transcript unavailable: no subtitles found]", "language": ""}
+
+        vtt_files.sort()  # prefer en over de
+        chosen = vtt_files[0]
+        lang = "en" if ".en" in chosen else chosen.split(".")[-2]
+
+        with open(os.path.join(tmpdir, chosen), encoding="utf-8") as f:
+            text = _parse_vtt(f.read())
+
+        return {"text": text or "[Transcript empty]", "language": lang}
 
 
 def fetch(channel: str, count: int = 3) -> list[dict]:
