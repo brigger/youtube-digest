@@ -70,6 +70,18 @@ def _format_duration(seconds: float | None) -> str:
     return f"{m}:{s:02d}"
 
 
+def _run_claude(prompt: str) -> str:
+    """Send a prompt to claude -p and return the response."""
+    claude_bin = _find_claude()
+    cmd = [claude_bin, "-p", prompt]
+    if os.getuid() != 0:
+        cmd = [claude_bin, "--dangerously-skip-permissions", "-p", prompt]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    if result.returncode != 0:
+        raise RuntimeError(f"claude -p failed:\n{result.stderr}")
+    return result.stdout.strip()
+
+
 def generate(videos: list[dict]) -> str:
     for v in videos:
         v["duration_formatted"] = _format_duration(v.get("duration"))
@@ -83,14 +95,4 @@ def generate(videos: list[dict]) -> str:
         video_json=json.dumps(videos, ensure_ascii=False, indent=2),
     )
 
-    claude_bin = _find_claude()
-
-    # --dangerously-skip-permissions is blocked when running as root (VPS)
-    cmd = [claude_bin, "-p", prompt]
-    if os.getuid() != 0:
-        cmd = [claude_bin, "--dangerously-skip-permissions", "-p", prompt]
-
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-    if result.returncode != 0:
-        raise RuntimeError(f"claude -p failed:\n{result.stderr}")
-    return result.stdout.strip()
+    return _run_claude(prompt)

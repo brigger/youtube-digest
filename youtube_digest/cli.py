@@ -86,6 +86,14 @@ def cmd_fetch(args) -> None:
     fetch_cmd(args)
 
 
+def cmd_listen(args) -> None:
+    from . import config as cfg_mod
+    from .listener import listen
+
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    listen(cfg, interval=args.interval)
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -115,6 +123,10 @@ def main() -> None:
     fetch_p.add_argument("channel", help="Channel URL, @handle, or name")
     fetch_p.add_argument("--count", type=int, default=3, help="Number of videos (default 3)")
 
+    # listen
+    listen_p = sub.add_parser("listen", help="Poll inbox every N seconds and reply to instructions")
+    listen_p.add_argument("--interval", type=int, default=30, help="Poll interval in seconds (default 30)")
+
     args = parser.parse_args()
 
     dispatch = {
@@ -122,6 +134,7 @@ def main() -> None:
         "init": cmd_init,
         "test-email": cmd_test_email,
         "fetch": cmd_fetch,
+        "listen": cmd_listen,
     }
     dispatch[args.command](args)
 

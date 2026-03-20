@@ -1,0 +1,13 @@
+[Unit]
+Description=ytdigest email listener
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/ytdigest listen
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
