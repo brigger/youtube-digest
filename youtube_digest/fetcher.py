@@ -94,8 +94,8 @@ def fetch_transcript(video_id: str, cookies_file: str | None = None) -> dict:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
-        except Exception as e:
-            return {"text": f"[Transcript unavailable: {e}]", "language": ""}
+        except Exception:
+            pass  # subtitle file may still have been written — check below
 
         vtt_files = [f for f in os.listdir(tmpdir) if f.endswith(".vtt")]
         if not vtt_files:
