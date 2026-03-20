@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "youtube-digest"
+version = "0.1.0"
+description = "Daily YouTube channel digest — fetch transcripts, summarise with Claude, email the result"
+requires-python = ">=3.10"
+dependencies = [
+    "yt-dlp",
+    "youtube-transcript-api",
+    "pyyaml",
+    "certifi",
+]
+
+[project.scripts]
+ytdigest = "youtube_digest.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["youtube_digest*"]

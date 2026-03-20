@@ -1,0 +1,17 @@
+# youtube-digest — example config
+# Copy to ~/.config/ytdigest/config.yaml and fill in your values.
+# Run `ytdigest init` for an interactive setup wizard.
+
+channel: https://www.youtube.com/@madymorrison
+count: 3
+
+email:
+  from: you@gmail.com
+  to:
+    - you@gmail.com
+    - colleague@example.com
+  smtp_host: smtp.gmail.com
+  smtp_port: 465        # 465 = SSL (recommended on Mac), 587 = STARTTLS (use on some VPS)
+  smtp_user: you@gmail.com
+  smtp_pass_env: GMAIL_PASSWORD   # reads password from this environment variable
+  # smtp_pass: your-app-password  # alternative: inline (not recommended for shared machines)
