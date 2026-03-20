@@ -72,6 +72,9 @@ def fetch_transcript(video_id: str, cookies_file: str | None = None) -> dict:
 
     with tempfile.TemporaryDirectory() as tmpdir:
         ydl_opts = {
+            # sb0 = storyboard/image format: no JS n-challenge needed,
+            # so it works from cloud IPs even when video formats are blocked.
+            "format": "sb0",
             "skip_download": True,
             "writeautomaticsub": True,
             "writesubtitles": True,
@@ -80,6 +83,7 @@ def fetch_transcript(video_id: str, cookies_file: str | None = None) -> dict:
             "outtmpl": os.path.join(tmpdir, "%(id)s.%(ext)s"),
             "quiet": True,
             "no_warnings": True,
+            "extractor_args": {"youtube": {"player_client": ["tv"]}},
         }
 
         if cookies_file:
