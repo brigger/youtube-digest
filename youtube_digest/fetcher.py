@@ -83,7 +83,6 @@ def fetch_transcript(video_id: str, cookies_file: str | None = None) -> dict:
             "outtmpl": os.path.join(tmpdir, "%(id)s.%(ext)s"),
             "quiet": True,
             "no_warnings": True,
-            "extractor_args": {"youtube": {"player_client": ["tv"]}},
         }
 
         if cookies_file:
