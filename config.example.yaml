@@ -5,6 +5,14 @@
 channel: https://www.youtube.com/@madymorrison
 count: 3
 
+# Optional: path to a YouTube cookies file (Netscape format).
+# Required on cloud/VPS servers where YouTube blocks subtitle downloads.
+# Export from your Mac with:
+#   yt-dlp --cookies-from-browser chrome --skip-download https://youtube.com
+#   cp ~/Library/Application\ Support/... (or use the command above)
+# See: https://github.com/brigger/youtube-digest#cookies
+# cookies_file: ~/.config/ytdigest/youtube-cookies.txt
+
 email:
   from: you@gmail.com
   to:

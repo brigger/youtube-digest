@@ -60,8 +60,12 @@ def _parse_vtt(vtt: str) -> str:
     return " ".join(lines)
 
 
-def fetch_transcript(video_id: str) -> dict:
-    """Fetch transcript via yt-dlp subtitle download (works from VPS/cloud IPs)."""
+def fetch_transcript(video_id: str, cookies_file: str | None = None) -> dict:
+    """Fetch transcript via yt-dlp subtitle download.
+
+    Pass cookies_file (path to a Netscape-format cookies.txt) to authenticate
+    with YouTube — required when running from cloud/VPS IPs that YouTube blocks.
+    """
     import yt_dlp
 
     url = f"https://www.youtube.com/watch?v={video_id}"
@@ -78,13 +82,17 @@ def fetch_transcript(video_id: str) -> dict:
             "no_warnings": True,
         }
 
+        if cookies_file:
+            expanded = os.path.expanduser(cookies_file)
+            if os.path.exists(expanded):
+                ydl_opts["cookiefile"] = expanded
+
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
         except Exception as e:
-            return {"text": f"[Error downloading subtitles: {e}]", "language": ""}
+            return {"text": f"[Transcript unavailable: {e}]", "language": ""}
 
-        # Find the first VTT file written
         vtt_files = [f for f in os.listdir(tmpdir) if f.endswith(".vtt")]
         if not vtt_files:
             return {"text": "[Transcript unavailable: no subtitles found]", "language": ""}
@@ -99,7 +107,7 @@ def fetch_transcript(video_id: str) -> dict:
         return {"text": text or "[Transcript empty]", "language": lang}
 
 
-def fetch(channel: str, count: int = 3) -> list[dict]:
+def fetch(channel: str, count: int = 3, cookies_file: str | None = None) -> list[dict]:
     """Full pipeline: fetch video metadata + transcripts. Returns list of video dicts."""
     print(f"Fetching latest {count} videos from {channel}...", file=sys.stderr)
     videos = fetch_latest_videos(channel, count)
@@ -107,7 +115,7 @@ def fetch(channel: str, count: int = 3) -> list[dict]:
         raise RuntimeError("No videos found. Check the channel URL or handle.")
     for v in videos:
         print(f"  Fetching transcript: {v['title']}", file=sys.stderr)
-        result = fetch_transcript(v["id"])
+        result = fetch_transcript(v["id"], cookies_file=cookies_file)
         v["transcript"] = result["text"]
         v["transcript_language"] = result["language"]
     return videos

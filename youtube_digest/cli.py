@@ -18,7 +18,8 @@ def cmd_run(args) -> None:
     if not channel:
         sys.exit("No channel specified. Set it in config.yaml or pass --channel.")
 
-    videos = fetcher.fetch(channel, count)
+    cookies_file = cfg.get("cookies_file")
+    videos = fetcher.fetch(channel, count, cookies_file=cookies_file)
     summary = summariser.generate(videos)
 
     if args.no_email:
