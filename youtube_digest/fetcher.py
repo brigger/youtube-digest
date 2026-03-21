@@ -136,26 +136,9 @@ def fetch_website(source: dict) -> list[dict]:
 
     print(f"Fetching website: {source_name} ({url})...", file=sys.stderr)
 
-    # Collect article URLs from homepage link extraction
-    article_urls = []
-    downloaded = trafilatura.fetch_url(url)
-    if downloaded:
-        result = trafilatura.bare_extraction(downloaded, include_links=True)
-        if result:
-            raw_links = result.get("links") or []
-            # trafilatura may return a string, list of strings, or list of dicts
-            if isinstance(raw_links, str):
-                raw_links = [l.strip() for l in raw_links.splitlines() if l.strip()]
-            normalized = []
-            for l in raw_links:
-                if isinstance(l, dict):
-                    normalized.append(l.get("url") or l.get("href") or "")
-                else:
-                    normalized.append(str(l))
-            article_urls = [
-                l for l in normalized
-                if l and urlparse(l).netloc == base_domain and len(l) > len(url) + 5
-            ]
+    # Collect article URLs via RSS/Atom feed (most reliable)
+    from trafilatura.feeds import find_feed_urls
+    article_urls = find_feed_urls(url)
 
     items = []
     for article_url in article_urls:
