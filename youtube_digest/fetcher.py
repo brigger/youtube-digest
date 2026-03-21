@@ -140,7 +140,10 @@ def fetch_website(source: dict) -> list[dict]:
     # Collect article URLs — try sitemap first, fall back to homepage link extraction
     article_urls = []
     try:
-        article_urls = list(sitemap_search(url))
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(lambda: list(sitemap_search(url)))
+            article_urls = future.result(timeout=20)
     except Exception:
         pass
 
