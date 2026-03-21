@@ -128,7 +128,6 @@ def fetch(channel: str, count: int = 3, cookies_file: str | None = None) -> list
 def fetch_website(source: dict) -> list[dict]:
     """Fetch and extract text from up to `count` articles from a website."""
     import trafilatura
-    from trafilatura.sitemaps import sitemap_search
 
     url = source["url"]
     count = source.get("count", 10)
@@ -137,18 +136,9 @@ def fetch_website(source: dict) -> list[dict]:
 
     print(f"Fetching website: {source_name} ({url})...", file=sys.stderr)
 
-    # Collect article URLs — try sitemap first, fall back to homepage link extraction
+    # Collect article URLs from homepage link extraction
     article_urls = []
-    try:
-        from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(lambda: list(sitemap_search(url)))
-            article_urls = future.result(timeout=20)
-    except Exception:
-        pass
-
-    if not article_urls:
-        downloaded = trafilatura.fetch_url(url)
+    downloaded = trafilatura.fetch_url(url)
         if downloaded:
             result = trafilatura.bare_extraction(downloaded, include_links=True)
             if result:
