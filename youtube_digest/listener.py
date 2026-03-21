@@ -128,17 +128,21 @@ def check_inbox(cfg: dict) -> list[tuple]:
 
 def process_reply(body: str, cfg: dict) -> str:
     """Fetch videos and generate a reply using claude -p."""
-    channel = cfg.get("channel", "https://www.youtube.com/@madymorrison")
-    count = cfg.get("count", 3)
+    sources = cfg.get("sources", [])
+    yt_sources = [s for s in sources if s.get("type", "youtube") == "youtube"]
+    if not yt_sources:
+        return "No YouTube sources configured."
+    first = yt_sources[0]
     cookies_file = cfg.get("cookies_file")
+    count = first.get("count", 3)
 
     print(f"  Fetching {count} videos to generate reply...", file=sys.stderr)
-    videos = fetcher.fetch(channel, count, cookies_file=cookies_file)
+    videos = fetcher.fetch(first["url"], count, cookies_file=cookies_file)
 
     for v in videos:
         v["duration_formatted"] = summariser._format_duration(v.get("duration"))
 
-    channel_name = videos[0].get("channel", channel) if videos else channel
+    channel_name = videos[0].get("channel", first.get("name", first["url"])) if videos else first.get("name", "Unknown")
 
     prompt = REPLY_PROMPT.format(
         instruction=body,

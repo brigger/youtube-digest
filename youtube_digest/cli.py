@@ -12,15 +12,12 @@ def cmd_run(args) -> None:
 
     cfg = cfg_mod.load(Path(args.config) if args.config else None)
 
-    channel = args.channel or cfg.get("channel")
-    count = args.count or cfg.get("count", 3)
+    if not cfg.get("sources"):
+        sys.exit("No sources configured. Run `ytdigest init` or `ytdigest sources add <url>`.")
 
-    if not channel:
-        sys.exit("No channel specified. Set it in config.yaml or pass --channel.")
-
-    cookies_file = cfg.get("cookies_file")
-    videos = fetcher.fetch(channel, count, cookies_file=cookies_file)
-    summary = summariser.generate(videos)
+    items = fetcher.fetch_all(cfg)
+    topics = cfg.get("topics", [])
+    summary = summariser.generate(items, topics)
 
     if args.no_email:
         print(summary)
@@ -36,11 +33,22 @@ def cmd_init(_args) -> None:
     channel = input("YouTube channel URL or @handle [@madymorrison]: ").strip()
     if not channel:
         channel = "https://www.youtube.com/@madymorrison"
+    name = input(f"Display name for this source [{channel}]: ").strip() or channel
 
-    count_raw = input("Number of videos to summarise [3]: ").strip()
+    count_raw = input("Number of videos to fetch [3]: ").strip()
     count = int(count_raw) if count_raw.isdigit() else 3
 
-    from_addr = input("Send FROM email address: ").strip()
+    print("\nTopics to filter by (one per line, blank line to finish):")
+    topics = []
+    while True:
+        t = input("  Topic: ").strip()
+        if not t:
+            break
+        topics.append(t)
+    if not topics:
+        topics = ["General interest"]
+
+    from_addr = input("\nSend FROM email address: ").strip()
     to_raw = input("Send TO (comma-separated): ").strip()
     to_addrs = [a.strip() for a in to_raw.split(",") if a.strip()]
 
@@ -54,8 +62,10 @@ def cmd_init(_args) -> None:
     pass_env = input("  Env var name [GMAIL_PASSWORD]: ").strip() or "GMAIL_PASSWORD"
 
     cfg = {
-        "channel": channel,
-        "count": count,
+        "topics": topics,
+        "sources": [
+            {"url": channel, "type": "youtube", "name": name, "count": count}
+        ],
         "email": {
             "from": from_addr,
             "to": to_addrs,
@@ -94,12 +104,84 @@ def cmd_listen(args) -> None:
     listen(cfg, interval=args.interval)
 
 
+# ── Sources subcommands ────────────────────────────────────────────────────────
+
+def cmd_sources_list(args) -> None:
+    from . import config as cfg_mod
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    sources = cfg.get("sources", [])
+    if not sources:
+        print("No sources configured.")
+        return
+    for i, s in enumerate(sources):
+        print(f"[{i}] {s.get('name', s['url'])}  type={s.get('type', 'youtube')}  count={s.get('count', 3)}")
+        print(f"     {s['url']}")
+
+
+def cmd_sources_add(args) -> None:
+    from . import config as cfg_mod
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    cfg.setdefault("sources", []).append({
+        "url": args.url,
+        "type": args.type,
+        "name": args.name or args.url,
+        "count": args.count,
+    })
+    cfg_mod.save(cfg)
+    print(f"Added source: {args.url}")
+
+
+def cmd_sources_remove(args) -> None:
+    from . import config as cfg_mod
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    sources = cfg.get("sources", [])
+    before = len(sources)
+    cfg["sources"] = [s for s in sources if s["url"] != args.url]
+    if len(cfg["sources"]) == before:
+        sys.exit(f"No source found with URL: {args.url}")
+    cfg_mod.save(cfg)
+    print(f"Removed source: {args.url}")
+
+
+# ── Topics subcommands ─────────────────────────────────────────────────────────
+
+def cmd_topics_list(args) -> None:
+    from . import config as cfg_mod
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    topics = cfg.get("topics", [])
+    if not topics:
+        print("No topics configured.")
+        return
+    for i, t in enumerate(topics):
+        print(f"[{i}] {t}")
+
+
+def cmd_topics_add(args) -> None:
+    from . import config as cfg_mod
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    cfg.setdefault("topics", []).append(args.text)
+    cfg_mod.save(cfg)
+    print(f"Added topic: {args.text}")
+
+
+def cmd_topics_remove(args) -> None:
+    from . import config as cfg_mod
+    cfg = cfg_mod.load(Path(args.config) if args.config else None)
+    topics = cfg.get("topics", [])
+    idx = args.index
+    if idx < 0 or idx >= len(topics):
+        sys.exit(f"Invalid index: {idx}. Use `ytdigest topics list` to see indices.")
+    removed = topics.pop(idx)
+    cfg_mod.save(cfg)
+    print(f"Removed topic [{idx}]: {removed}")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="ytdigest",
-        description="YouTube channel digest — fetch, summarise with Claude, email.",
+        description="Daily digest — fetch YouTube & websites, filter by topic, email the result.",
     )
     parser.add_argument("--config", metavar="PATH", help="Config file (default: ~/.config/ytdigest/config.yaml)")
 
@@ -108,8 +190,6 @@ def main() -> None:
 
     # run
     run_p = sub.add_parser("run", help="Run the full digest pipeline once")
-    run_p.add_argument("--channel", help="Override channel from config")
-    run_p.add_argument("--count", type=int, help="Override video count from config")
     run_p.add_argument("--no-email", action="store_true", help="Print summary instead of emailing")
 
     # init
@@ -118,7 +198,7 @@ def main() -> None:
     # test-email
     sub.add_parser("test-email", help="Send a test email to verify SMTP config")
 
-    # fetch  (used by the Claude Code skill)
+    # fetch (used by the Claude Code skill)
     fetch_p = sub.add_parser("fetch", help="Fetch videos + transcripts and print JSON")
     fetch_p.add_argument("channel", help="Channel URL, @handle, or name")
     fetch_p.add_argument("--count", type=int, default=3, help="Number of videos (default 3)")
@@ -127,16 +207,60 @@ def main() -> None:
     listen_p = sub.add_parser("listen", help="Poll inbox every N seconds and reply to instructions")
     listen_p.add_argument("--interval", type=int, default=30, help="Poll interval in seconds (default 30)")
 
+    # sources
+    sources_p = sub.add_parser("sources", help="Manage content sources")
+    sources_sub = sources_p.add_subparsers(dest="sources_command", metavar="action")
+    sources_sub.required = True
+
+    sources_sub.add_parser("list", help="List all sources")
+
+    sa = sources_sub.add_parser("add", help="Add a source")
+    sa.add_argument("url", help="Source URL")
+    sa.add_argument("--type", choices=["youtube", "website"], default="youtube", help="Source type (default: youtube)")
+    sa.add_argument("--name", help="Display name")
+    sa.add_argument("--count", type=int, default=3, help="Number of items to fetch")
+
+    sr = sources_sub.add_parser("remove", help="Remove a source by URL")
+    sr.add_argument("url", help="Source URL to remove")
+
+    # topics
+    topics_p = sub.add_parser("topics", help="Manage digest topics")
+    topics_sub = topics_p.add_subparsers(dest="topics_command", metavar="action")
+    topics_sub.required = True
+
+    topics_sub.add_parser("list", help="List all topics")
+
+    ta = topics_sub.add_parser("add", help="Add a topic")
+    ta.add_argument("text", help="Topic description")
+
+    tr = topics_sub.add_parser("remove", help="Remove a topic by index")
+    tr.add_argument("index", type=int, help="Topic index (from `topics list`)")
+
     args = parser.parse_args()
 
-    dispatch = {
-        "run": cmd_run,
-        "init": cmd_init,
-        "test-email": cmd_test_email,
-        "fetch": cmd_fetch,
-        "listen": cmd_listen,
-    }
-    dispatch[args.command](args)
+    if args.command == "sources":
+        dispatch = {
+            "list": cmd_sources_list,
+            "add": cmd_sources_add,
+            "remove": cmd_sources_remove,
+        }
+        dispatch[args.sources_command](args)
+    elif args.command == "topics":
+        dispatch = {
+            "list": cmd_topics_list,
+            "add": cmd_topics_add,
+            "remove": cmd_topics_remove,
+        }
+        dispatch[args.topics_command](args)
+    else:
+        dispatch = {
+            "run": cmd_run,
+            "init": cmd_init,
+            "test-email": cmd_test_email,
+            "fetch": cmd_fetch,
+            "listen": cmd_listen,
+        }
+        dispatch[args.command](args)
 
 
 if __name__ == "__main__":

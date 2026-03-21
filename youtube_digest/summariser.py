@@ -1,4 +1,4 @@
-"""Generate GetAbstract-style summaries via `claude -p`."""
+"""Generate topic-grouped digests via `claude -p`."""
 
 import json
 import os
@@ -7,49 +7,47 @@ import subprocess
 import sys
 from pathlib import Path
 
-SUMMARY_PROMPT = """\
-You are writing GetAbstract-style video briefs for a busy professional.
+DIGEST_PROMPT = """\
+You are preparing a daily content digest for a busy professional.
 
-Below is JSON for {n} YouTube videos from {channel}.
-For each video produce this exact structure (plain text, no markdown):
+The user is interested in these topics:
+{topics_list}
 
----
-VIDEO {num}: [Title] ([M:SS duration])
-URL: [url]
+Below is a JSON array of items fetched today from various sources.
+Each item has a "type" (youtube or website), "title", "url", "source_name",
+and either "transcript" (YouTube) or "text" (website) with the full content.
 
-THE BIG IDEA
-One sentence capturing the single most important point.
+Your task:
+1. Read every item.
+2. For each topic, identify items that are relevant to it.
+3. Write your output grouped by topic. Within each topic, write a brief summary
+   of each relevant item using this format (plain text, no markdown):
 
-KEY TAKEAWAYS
-1. [specific, actionable takeaway]
-2. [specific, actionable takeaway]
-3. [specific, actionable takeaway]
-4. [specific, actionable takeaway]
-5. [specific, actionable takeaway]
+TOPIC: [topic name]
 
-SUMMARY
-[Section heading]: 2-3 sentences on the main theme.
-[Section heading]: 2-3 sentences on a secondary theme.
-[Section heading]: 2-3 sentences on implications or closing thought.
+  [Title] — [source_name]
+  URL: [url]
+  THE BIG IDEA: [one sentence capturing the most important point]
+  KEY POINTS:
+  - [specific detail, tool name, person, finding, or number mentioned]
+  - [specific detail]
+  - [specific detail]
 
-BOTTOM LINE
-1-2 sentences: who should care and why it matters.
----
+4. If no items match a topic, write: TOPIC: [name] — nothing relevant today.
+5. After all topics, add a tally:
 
-After all briefs add:
-
-CHANNEL PULSE — {channel}
-[1-2 sentences on recurring themes across these videos]
-[1 sentence on audience fit]
+SOURCES CHECKED
+[source_name]: [N] items checked, [M] included
 
 Rules:
-- Be specific: name poses, techniques, durations, products, or people mentioned.
-- If transcript is in German, summarise in English.
-- If transcript is unavailable, work from the title and description only.
+- Be specific: name tools, people, companies, techniques, or statistics from the content.
 - Plain text only — no asterisks, no markdown symbols.
+- If a transcript is in German, summarise in English.
+- Do not invent information not present in the content.
+- An item can appear under multiple topics if relevant to both.
 
-Video data:
-{video_json}
+Items:
+{items_json}
 """
 
 
@@ -73,26 +71,23 @@ def _format_duration(seconds: float | None) -> str:
 def _run_claude(prompt: str) -> str:
     """Send a prompt to claude -p and return the response."""
     claude_bin = _find_claude()
-    cmd = [claude_bin, "-p", prompt]
-    if os.getuid() != 0:
-        cmd = [claude_bin, "--dangerously-skip-permissions", "-p", prompt]
+    cmd = [claude_bin, "--dangerously-skip-permissions", "-p", prompt]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
         raise RuntimeError(f"claude -p failed:\n{result.stderr}")
     return result.stdout.strip()
 
 
-def generate(videos: list[dict]) -> str:
-    for v in videos:
-        v["duration_formatted"] = _format_duration(v.get("duration"))
+def generate(items: list[dict], topics: list[str]) -> str:
+    """Generate a topic-grouped digest from fetched items."""
+    for item in items:
+        if item.get("type") == "youtube" and "duration" in item:
+            item["duration_formatted"] = _format_duration(item.get("duration"))
 
-    channel_name = videos[0].get("channel", "the channel") if videos else "the channel"
+    topics_list = "\n".join(f"- {t}" for t in topics) if topics else "- General interest"
 
-    prompt = SUMMARY_PROMPT.format(
-        n=len(videos),
-        channel=channel_name,
-        num="{num}",
-        video_json=json.dumps(videos, ensure_ascii=False, indent=2),
+    prompt = DIGEST_PROMPT.format(
+        topics_list=topics_list,
+        items_json=json.dumps(items, ensure_ascii=False, indent=2),
     )
-
     return _run_claude(prompt)

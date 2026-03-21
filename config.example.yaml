@@ -2,15 +2,25 @@
 # Copy to ~/.config/ytdigest/config.yaml and fill in your values.
 # Run `ytdigest init` for an interactive setup wizard.
 
-channel: https://www.youtube.com/@madymorrison
-count: 3
+topics:
+  - AI tools, models, and research breakthroughs
+  - Developer tools and software releases
+  - Tech industry news and events
+
+sources:
+  - url: https://www.youtube.com/@madymorrison
+    type: youtube
+    name: Mady Morrison
+    count: 3
+  - url: https://techcrunch.com
+    type: website
+    name: TechCrunch
+    count: 10
 
 # Optional: path to a YouTube cookies file (Netscape format).
 # Required on cloud/VPS servers where YouTube blocks subtitle downloads.
 # Export from your Mac with:
 #   yt-dlp --cookies-from-browser chrome --skip-download https://youtube.com
-#   cp ~/Library/Application\ Support/... (or use the command above)
-# See: https://github.com/brigger/youtube-digest#cookies
 # cookies_file: ~/.config/ytdigest/youtube-cookies.txt
 
 email:

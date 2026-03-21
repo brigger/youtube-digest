@@ -1,10 +1,11 @@
-"""Fetch latest N videos and transcripts from a YouTube channel."""
+"""Fetch content from YouTube channels and websites."""
 
 import json
 import os
 import re
 import sys
 import tempfile
+from urllib.parse import urlparse
 
 
 def fetch_latest_videos(channel_url: str, count: int = 3) -> list[dict]:
@@ -122,6 +123,90 @@ def fetch(channel: str, count: int = 3, cookies_file: str | None = None) -> list
         v["transcript"] = result["text"]
         v["transcript_language"] = result["language"]
     return videos
+
+
+def fetch_website(source: dict) -> list[dict]:
+    """Fetch and extract text from up to `count` articles from a website."""
+    import trafilatura
+    from trafilatura.sitemaps import sitemap_search
+
+    url = source["url"]
+    count = source.get("count", 10)
+    source_name = source.get("name", url)
+    base_domain = urlparse(url).netloc
+
+    print(f"Fetching website: {source_name} ({url})...", file=sys.stderr)
+
+    # Collect article URLs — try sitemap first, fall back to homepage link extraction
+    article_urls = []
+    try:
+        article_urls = list(sitemap_search(url))
+    except Exception:
+        pass
+
+    if not article_urls:
+        downloaded = trafilatura.fetch_url(url)
+        if downloaded:
+            result = trafilatura.bare_extraction(downloaded, include_links=True)
+            if result:
+                raw_links = result.get("links") or ""
+                if isinstance(raw_links, str):
+                    raw_links = [l.strip() for l in raw_links.splitlines() if l.strip()]
+                article_urls = [
+                    l for l in raw_links
+                    if urlparse(l).netloc == base_domain and len(l) > len(url) + 5
+                ]
+
+    items = []
+    for article_url in article_urls:
+        if len(items) >= count:
+            break
+        print(f"  Scraping: {article_url}", file=sys.stderr)
+        try:
+            downloaded = trafilatura.fetch_url(article_url)
+            if not downloaded:
+                continue
+            text = trafilatura.extract(downloaded)
+            if not text or len(text) < 200:
+                continue
+            metadata = trafilatura.extract_metadata(downloaded)
+            items.append({
+                "type": "website",
+                "url": article_url,
+                "title": (metadata.title if metadata and metadata.title else article_url),
+                "text": text,
+                "source_name": source_name,
+                "publish_date": (str(metadata.date) if metadata and metadata.date else ""),
+            })
+        except Exception as e:
+            print(f"  Warning: could not scrape {article_url}: {e}", file=sys.stderr)
+
+    if not items:
+        print(f"  Warning: no articles scraped from {source_name}", file=sys.stderr)
+    return items
+
+
+def fetch_all(cfg: dict) -> list[dict]:
+    """Fetch all items from all configured sources. Returns a flat list."""
+    sources = cfg.get("sources", [])
+    cookies_file = cfg.get("cookies_file")
+    all_items = []
+    for source in sources:
+        src_type = source.get("type", "youtube")
+        try:
+            if src_type == "youtube":
+                items = fetch(source["url"], source.get("count", 3), cookies_file=cookies_file)
+                for item in items:
+                    item["source_name"] = source.get("name", source["url"])
+                    item["type"] = "youtube"
+                all_items.extend(items)
+            elif src_type == "website":
+                all_items.extend(fetch_website(source))
+            else:
+                print(f"Unknown source type: {src_type!r} — skipping", file=sys.stderr)
+        except Exception as e:
+            print(f"Error fetching {source.get('name', source['url'])}: {e}", file=sys.stderr)
+    return all_items
 
 
 def fetch_cmd(args) -> None:
