@@ -209,7 +209,7 @@ def main() -> None:
 
     # sources
     sources_p = sub.add_parser("sources", help="Manage content sources")
-    sources_sub = sources_p.add_subparsers(dest="sources_command", metavar="action")
+    sources_sub = sources_p.add_subparsers(dest="sources_command", metavar="{list,add,remove}")
     sources_sub.required = True
 
     sources_sub.add_parser("list", help="List all sources")
@@ -225,7 +225,7 @@ def main() -> None:
 
     # topics
     topics_p = sub.add_parser("topics", help="Manage digest topics")
-    topics_sub = topics_p.add_subparsers(dest="topics_command", metavar="action")
+    topics_sub = topics_p.add_subparsers(dest="topics_command", metavar="{list,add,remove}")
     topics_sub.required = True
 
     topics_sub.add_parser("list", help="List all topics")
