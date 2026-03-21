@@ -136,9 +136,21 @@ def fetch_website(source: dict) -> list[dict]:
 
     print(f"Fetching website: {source_name} ({url})...", file=sys.stderr)
 
-    # Collect article URLs via RSS/Atom feed (most reliable)
+    # Collect article URLs — try URL as direct feed first, then discover feed
+    import feedparser
     from trafilatura.feeds import find_feed_urls
-    article_urls = find_feed_urls(url)
+
+    article_urls = []
+
+    # Try parsing the URL itself as an RSS/Atom feed
+    downloaded = trafilatura.fetch_url(url)
+    if downloaded:
+        feed = feedparser.parse(downloaded)
+        article_urls = [e.link for e in feed.entries if e.get("link")]
+
+    # If not a direct feed, discover feeds on the site
+    if not article_urls:
+        article_urls = find_feed_urls(url)
 
     items = []
     for article_url in article_urls:

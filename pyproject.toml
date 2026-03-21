@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "youtube-digest"
-version = "0.2.5"
+version = "0.2.6"
 description = "Daily YouTube channel digest — fetch transcripts, summarise with Claude, email the result"
 requires-python = ">=3.10"
 dependencies = [
@@ -12,6 +12,7 @@ dependencies = [
     "pyyaml",
     "certifi",
     "trafilatura",
+    "feedparser",
 ]
 
 [project.scripts]
