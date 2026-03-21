@@ -139,16 +139,16 @@ def fetch_website(source: dict) -> list[dict]:
     # Collect article URLs from homepage link extraction
     article_urls = []
     downloaded = trafilatura.fetch_url(url)
-        if downloaded:
-            result = trafilatura.bare_extraction(downloaded, include_links=True)
-            if result:
-                raw_links = result.get("links") or ""
-                if isinstance(raw_links, str):
-                    raw_links = [l.strip() for l in raw_links.splitlines() if l.strip()]
-                article_urls = [
-                    l for l in raw_links
-                    if urlparse(l).netloc == base_domain and len(l) > len(url) + 5
-                ]
+    if downloaded:
+        result = trafilatura.bare_extraction(downloaded, include_links=True)
+        if result:
+            raw_links = result.get("links") or ""
+            if isinstance(raw_links, str):
+                raw_links = [l.strip() for l in raw_links.splitlines() if l.strip()]
+            article_urls = [
+                l for l in raw_links
+                if urlparse(l).netloc == base_domain and len(l) > len(url) + 5
+            ]
 
     items = []
     for article_url in article_urls:
