@@ -20,31 +20,30 @@ and either "transcript" (YouTube) or "text" (website) with the full content.
 Your task:
 1. Read every item.
 2. For each topic, identify items that are relevant to it.
-3. Write your output grouped by topic. Within each topic, write a brief summary
-   of each relevant item using this format (plain text, no markdown):
+3. Write your output grouped by topic. For each relevant item write:
 
 TOPIC: [topic name]
 
-  [Title] — [source_name]
-  URL: [url]
-  THE BIG IDEA: [one sentence capturing the most important point]
-  KEY POINTS:
-  - [specific detail, tool name, person, finding, or number mentioned]
-  - [specific detail]
-  - [specific detail]
+[Title]
+[source_name] | [url]
+[2-3 sentences in plain prose. Lead with the single most important fact. Name the
+specific people, companies, tools, numbers, or decisions involved. End with why it
+matters or what happens next.]
 
 4. If no items match a topic, write: TOPIC: [name] — nothing relevant today.
-5. After all topics, add a tally:
+5. After all topics add a one-line tally per source:
 
 SOURCES CHECKED
-[source_name]: [N] items checked, [M] included
+[source_name]: [N] checked, [M] included
 
-Rules:
-- Be specific: name tools, people, companies, techniques, or statistics from the content.
-- Plain text only — no asterisks, no markdown symbols.
+Writing rules:
+- Prose only — no bullet points, no dashes, no bold, no markdown symbols.
+- Every sentence must contain at least one specific fact (name, number, company, decision).
 - If a transcript is in German, summarise in English.
 - Do not invent information not present in the content.
 - An item can appear under multiple topics if relevant to both.
+- Ruthlessly cut anything vague or generic. A reader should learn something concrete
+  from every sentence.
 
 Items:
 {items_json}
