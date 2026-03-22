@@ -69,12 +69,12 @@ def _format_duration(seconds: float | None) -> str:
 
 
 def _run_claude(prompt: str) -> str:
-    """Send a prompt to claude -p and return the response."""
+    """Send a prompt to claude -p via stdin and return the response."""
     claude_bin = _find_claude()
-    cmd = [claude_bin, "-p", prompt]
+    cmd = [claude_bin, "-p"]
     if os.getuid() != 0:
-        cmd = [claude_bin, "--dangerously-skip-permissions", "-p", prompt]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+        cmd = [claude_bin, "--dangerously-skip-permissions", "-p"]
+    result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
         raise RuntimeError(f"claude -p failed:\n{result.stderr}")
     return result.stdout.strip()
