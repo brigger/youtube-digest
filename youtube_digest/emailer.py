@@ -35,15 +35,18 @@ def send(body: str, cfg: dict, subject: str | None = None) -> None:
     password = _get_password(email_cfg)
 
     today = date.today().strftime("%B %d, %Y")
-    channel = cfg.get("channel", "YouTube")
-    subject = subject or f"YouTube Digest — {today}"
-    intro = f"Your daily digest for {today}\n{'=' * 50}\n\n"
+    subject = subject or f"Daily Digest — {today}"
 
-    msg = MIMEMultipart()
+    msg = MIMEMultipart("alternative")
     msg["From"] = from_addr
     msg["To"] = ", ".join(to_addrs)
     msg["Subject"] = subject
-    msg.attach(MIMEText(intro + body, "plain", "utf-8"))
+
+    is_html = body.lstrip().startswith("<!DOCTYPE") or body.lstrip().startswith("<html")
+    if is_html:
+        msg.attach(MIMEText(body, "html", "utf-8"))
+    else:
+        msg.attach(MIMEText(body, "plain", "utf-8"))
 
     ctx = ssl.create_default_context(cafile=certifi.where())
 
