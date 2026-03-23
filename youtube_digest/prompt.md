@@ -11,13 +11,14 @@ Your task:
 1. Read every item.
 2. For each topic, identify items that are relevant to it.
 3. Write your output grouped by topic. For each relevant item write:
+4. Compose an HTML Email
 
 TOPIC: [topic name]
 
 [Title]
 [source_name] | [url]
-[2-3 sentences in plain prose. Lead with the single most important fact. Name the
-specific people, companies, tools, numbers, or decisions involved. End with why it
+[1 sentences in plain prose of most important fact. THen two bullet points, possibly specifiying the
+specific people, companies, tools, numbers, or decisions involved and why it
 matters or what happens next.]
 
 4. If no items match a topic, write: TOPIC: [name] — nothing relevant today.
@@ -27,8 +28,6 @@ SOURCES CHECKED
 [source_name]: [N] checked, [M] included
 
 Writing rules:
-- Prose only — no bullet points, no dashes, no bold, no markdown symbols.
-- Every sentence must contain at least one specific fact (name, number, company, decision).
 - If a transcript is in German, summarise in English.
 - Do not invent information not present in the content.
 - An item can appear under multiple topics if relevant to both.
