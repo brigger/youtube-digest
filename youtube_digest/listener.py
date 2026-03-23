@@ -17,27 +17,8 @@ from . import emailer, fetcher, summariser
 
 PROCESSED_IDS_FILE = Path.home() / ".config" / "ytdigest" / "processed_ids.txt"
 
-REPLY_PROMPT = """\
-You are managing a YouTube digest email service for a busy professional.
-
-The user replied to their daily digest email with this message:
----
-{instruction}
----
-
-Here are the latest {n} videos from {channel} with full transcripts.
-
-Respond to the user's message. Depending on what they asked:
-- If they want more summaries, provide them in the same GetAbstract format (plain text, no markdown).
-- If they asked a question about the content, answer it specifically using the transcripts.
-- If they mentioned a different channel, note that you are working with the configured channel for now.
-- If it's a general comment or feedback, acknowledge it warmly and briefly.
-
-Keep your response focused and practical. Plain text only — no asterisks, no markdown symbols.
-
-Video data:
-{video_json}
-"""
+_REPLY_PROMPT_FILE = Path(__file__).parent / "reply_prompt.md"
+REPLY_PROMPT = _REPLY_PROMPT_FILE.read_text(encoding="utf-8")
 
 
 def _load_processed() -> set:
