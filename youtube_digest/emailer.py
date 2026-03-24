@@ -52,11 +52,11 @@ def send(body: str, cfg: dict, subject: str | None = None) -> None:
 
     print(f"Sending email to {to_addrs}...", file=sys.stderr)
     if smtp_port == 465:
-        with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ctx) as s:
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, context=ctx, timeout=30) as s:
             s.login(smtp_user, password)
             s.sendmail(from_addr, to_addrs, msg.as_string())
     else:
-        with smtplib.SMTP(smtp_host, smtp_port) as s:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as s:
             s.ehlo()
             s.starttls(context=ctx)
             s.login(smtp_user, password)
