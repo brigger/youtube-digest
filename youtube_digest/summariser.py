@@ -2,13 +2,20 @@
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
-_PROMPT_FILE = Path(__file__).parent / "prompt.md"
-DIGEST_PROMPT = _PROMPT_FILE.read_text(encoding="utf-8")
+_TOPIC_PROMPT_FILE = Path(__file__).parent / "prompt_topic.md"
+_EMAIL_SHELL_FILE = Path(__file__).parent / "email_shell.md"
+TOPIC_PROMPT = _TOPIC_PROMPT_FILE.read_text(encoding="utf-8")
+EMAIL_SHELL = _EMAIL_SHELL_FILE.read_text(encoding="utf-8")
+
+# Keep loading the old prompt for the reply feature
+_REPLY_PROMPT_FALLBACK = Path(__file__).parent / "prompt.md"
 
 
 def _find_claude() -> str:
@@ -40,30 +47,75 @@ def _run_claude(prompt: str) -> str:
     return result.stdout.strip()
 
 
+def _slug(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
 def _parse_topic(t) -> dict:
     if isinstance(t, str):
         return {"name": t, "count": 5}
     return {"name": t.get("name", ""), "count": int(t.get("count", 5))}
 
 
-_MAX_TEXT_CHARS = 3000  # truncate article/transcript text to keep prompt manageable
+def _generate_topic(items_json: str, topic_name: str, topic_count: int, topic_slug: str) -> tuple[str, str]:
+    """Call Claude for one topic. Returns (toc_li_html, section_html)."""
+    print(f"  Generating topic: {topic_name}...", file=sys.stderr)
+    prompt = TOPIC_PROMPT.format(
+        topic_name=topic_name,
+        topic_slug=topic_slug,
+        topic_count=topic_count,
+        items_json=items_json,
+    )
+    response = _run_claude(prompt)
+    if "===TOC===" in response and "===SECTION===" in response:
+        _, rest = response.split("===TOC===", 1)
+        toc_li, section = rest.split("===SECTION===", 1)
+        return toc_li.strip(), section.strip()
+    # Fallback: wrap raw response as a section
+    slug_id = f"topic-{topic_slug}"
+    toc_li = f'<li><a href="#{slug_id}">{topic_name}</a></li>'
+    return toc_li, response
 
 
 def generate(items: list[dict], topics: list) -> str:
-    """Generate a topic-grouped digest from fetched items."""
+    """Generate a topic-grouped digest, calling Claude once per topic."""
+    _MAX_TEXT_CHARS = 3000
     for item in items:
         if item.get("type") == "youtube" and "duration" in item:
             item["duration_formatted"] = _format_duration(item.get("duration"))
-        # Truncate long text fields to keep prompt size manageable
         for field in ("text", "transcript"):
             if field in item and len(item[field]) > _MAX_TEXT_CHARS:
                 item[field] = item[field][:_MAX_TEXT_CHARS] + "…"
 
+    items_json = json.dumps(items, ensure_ascii=False, indent=2)
     parsed = [_parse_topic(t) for t in topics] if topics else [{"name": "General interest", "count": 5}]
-    topics_list = "\n".join(f"- {t['name']} (max {t['count']} items)" for t in parsed)
 
-    prompt = DIGEST_PROMPT.format(
-        topics_list=topics_list,
-        items_json=json.dumps(items, ensure_ascii=False, indent=2),
+    toc_parts = []
+    section_parts = []
+    for t in parsed:
+        slug = _slug(t["name"])
+        toc_li, section = _generate_topic(items_json, t["name"], t["count"], slug)
+        toc_parts.append(toc_li)
+        section_parts.append(section)
+
+    # Build sources summary
+    source_counts: dict[str, int] = {}
+    for item in items:
+        name = item.get("source_name", "Unknown")
+        source_counts[name] = source_counts.get(name, 0) + 1
+    sources_html = "\n".join(
+        f'          <li><strong>{name}:</strong> {n} items</li>'
+        for name, n in source_counts.items()
     )
-    return _run_claude(prompt)
+
+    date_str = datetime.now().strftime("%A, %B %-d, %Y")
+    toc_items = "\n".join(f"          {li}" for li in toc_parts)
+    sections = '\n      <hr class="divider"/>\n'.join(section_parts)
+
+    return EMAIL_SHELL.format(
+        date=date_str,
+        toc_items=toc_items,
+        sections=sections,
+        sources_html=sources_html,
+        total_n=len(items),
+    )

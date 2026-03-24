@@ -24,4 +24,4 @@ where = ["."]
 include = ["youtube_digest*"]
 
 [tool.setuptools.package-data]
-youtube_digest = ["prompt.md", "reply_prompt.md"]
+youtube_digest = ["prompt.md", "prompt_topic.md", "email_shell.md", "reply_prompt.md"]
