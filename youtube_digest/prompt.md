@@ -38,9 +38,13 @@ HTML structure to follow exactly:
     .toc ul {{ margin:0; padding:0; list-style:none; }}
     .toc ul li {{ padding:5px 0; border-bottom:1px solid #e8ecf2; }}
     .toc ul li:last-child {{ border-bottom:none; }}
-    .toc ul li a {{ font-family:Helvetica,Arial,sans-serif; font-size:13px; font-weight:700; color:#4a6fa5; text-decoration:none; }}
-    .toc ul li a:hover {{ text-decoration:underline; }}
-    .toc ul li span {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; color:#666; display:block; margin-top:2px; }}
+    .toc ul li > a {{ font-family:Helvetica,Arial,sans-serif; font-size:13px; font-weight:700; color:#4a6fa5; text-decoration:none; }}
+    .toc ul li > a:hover {{ text-decoration:underline; }}
+    .toc ul li span {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; color:#999; font-style:italic; display:block; margin-top:2px; }}
+    .toc-items {{ margin:6px 0 2px 0; padding:0 0 0 14px; list-style:none; }}
+    .toc-items li {{ padding:3px 0; border-bottom:none; }}
+    .toc-items li a {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; font-weight:400; color:#333; text-decoration:none; }}
+    .toc-items li a:hover {{ text-decoration:underline; color:#4a6fa5; }}
     .topic-label {{ font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#fff; background:#4a6fa5; display:inline-block; padding:4px 10px; border-radius:3px; margin-bottom:20px; }}
     .back-to-top {{ font-family:Helvetica,Arial,sans-serif; font-size:11px; color:#4a6fa5; text-decoration:none; display:block; text-align:right; margin-top:8px; margin-bottom:0; }}
     .item {{ border-left:3px solid #e8ecf2; padding:0 0 0 18px; margin-bottom:32px; }}
@@ -68,14 +72,19 @@ HTML structure to follow exactly:
     </div>
     <div class="body">
 
-      <!-- TABLE OF CONTENTS: one row per topic -->
+      <!-- TABLE OF CONTENTS: one row per topic, with item previews -->
       <div class="toc">
         <h3>Today's Topics</h3>
         <ul>
           [For each topic:]
           <li>
             <a href="#topic-[slug]">[Topic Name]</a>
-            <span>[One sentence: what was found today. E.g. "3 articles on new model releases and chip infrastructure." or "Nothing relevant today."]</span>
+            [If items were found for this topic, add a sub-list of up to (max N) items:]
+            <ul class="toc-items">
+              [For each item, numbered starting at 1:]
+              <li><a href="#item-[topic-slug]-[n]">[Title]</a> — [~200-character plain-text summary: one crisp sentence stating the key fact, with specific names, numbers, or outcomes]</li>
+            </ul>
+            [If nothing relevant:] <span>Nothing relevant today.</span>
           </li>
         </ul>
       </div>
@@ -85,8 +94,8 @@ HTML structure to follow exactly:
       <div id="topic-[slug]">
         <div class="topic-label">[Topic Name]</div>
 
-        [For each relevant item:]
-        <div class="item">
+        [For each relevant item (numbered starting at 1, matching the TOC), give each item its own id:]
+        <div class="item" id="item-[topic-slug]-[n]">
           <h2>[Title]</h2>
           <div class="meta">[source_name] &nbsp;|&nbsp; <a href="[url]">[domain only]</a></div>
           <p>[1 sentence: the single most important fact. Name specific people, companies, tools, or numbers.]</p>

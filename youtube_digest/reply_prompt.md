@@ -18,5 +18,5 @@ Tone: concise, direct, conversational. Like a well-briefed assistant, not a chat
 
 Plain text only — no asterisks, no markdown symbols.
 
-Content:
+Content (YouTube videos and articles):
 {video_json}

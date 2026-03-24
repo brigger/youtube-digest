@@ -48,7 +48,7 @@ SSH: `ssh root@95.217.222.205`
 | Field        | Value                                        |
 |--------------|----------------------------------------------|
 | Account      | ddiscofox@gmail.com                          |
-| App password | fwzj jxwq fhjq wrez                          |
+| App password | see `GMAIL_PASSWORD` env var                 |
 | Recipients   | ddiscofox@gmail.com, patrick@getabstract.com |
 
 ## YouTube Cookies (VPS)

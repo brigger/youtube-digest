@@ -129,7 +129,7 @@ def process_reply(body: str, cfg: dict) -> str:
         instruction=body,
         n=len(videos),
         channel=channel_name,
-        video_json=json.dumps(videos, ensure_ascii=False, indent=2),
+        video_json=json.dumps(videos, ensure_ascii=False, indent=2),  # includes all item types
     )
 
     return summariser._run_claude(prompt)
