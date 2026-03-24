@@ -147,21 +147,24 @@ def cmd_sources_remove(args) -> None:
 
 def cmd_topics_list(args) -> None:
     from . import config as cfg_mod
+    from .summariser import _parse_topic
     cfg = cfg_mod.load(Path(args.config) if args.config else None)
     topics = cfg.get("topics", [])
     if not topics:
         print("No topics configured.")
         return
     for i, t in enumerate(topics):
-        print(f"[{i}] {t}")
+        p = _parse_topic(t)
+        print(f"[{i}] {p['name']}  (count={p['count']})")
 
 
 def cmd_topics_add(args) -> None:
     from . import config as cfg_mod
     cfg = cfg_mod.load(Path(args.config) if args.config else None)
-    cfg.setdefault("topics", []).append(args.text)
+    entry = {"name": args.text, "count": args.count}
+    cfg.setdefault("topics", []).append(entry)
     cfg_mod.save(cfg)
-    print(f"Added topic: {args.text}")
+    print(f"Added topic: {args.text}  (count={args.count})")
 
 
 def cmd_topics_remove(args) -> None:
@@ -232,6 +235,7 @@ def main() -> None:
 
     ta = topics_sub.add_parser("add", help="Add a topic")
     ta.add_argument("text", help="Topic description")
+    ta.add_argument("--count", type=int, default=5, help="Max items for this topic (default 5)")
 
     tr = topics_sub.add_parser("remove", help="Remove a topic by index")
     tr.add_argument("index", type=int, help="Topic index (from `topics list`)")
