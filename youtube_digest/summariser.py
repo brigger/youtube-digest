@@ -57,8 +57,8 @@ def _parse_topic(t) -> dict:
     return {"name": t.get("name", ""), "count": int(t.get("count", 5))}
 
 
-def _generate_topic(items_json: str, topic_name: str, topic_count: int, topic_slug: str) -> tuple[str, str]:
-    """Call Claude for one topic. Returns (toc_li_html, section_html)."""
+def _generate_topic(items_json: str, topic_name: str, topic_count: int, topic_slug: str) -> tuple[str, str, str]:
+    """Call Claude for one topic. Returns (toc_li_html, section_html, markdown)."""
     print(f"  Generating topic: {topic_name}...", file=sys.stderr)
     prompt = TOPIC_PROMPT.format(
         topic_name=topic_name,
@@ -69,12 +69,15 @@ def _generate_topic(items_json: str, topic_name: str, topic_count: int, topic_sl
     response = _run_claude(prompt)
     if "===TOC===" in response and "===SECTION===" in response:
         _, rest = response.split("===TOC===", 1)
-        toc_li, section = rest.split("===SECTION===", 1)
-        return toc_li.strip(), section.strip()
-    # Fallback: wrap raw response as a section
-    slug_id = f"topic-{topic_slug}"
-    toc_li = f'<li><a href="#{slug_id}">{topic_name}</a></li>'
-    return toc_li, response
+        if "===MARKDOWN===" in rest:
+            middle, md = rest.split("===MARKDOWN===", 1)
+        else:
+            middle, md = rest, ""
+        toc_li, section = middle.split("===SECTION===", 1)
+        return toc_li.strip(), section.strip(), md.strip()
+    # Fallback
+    toc_li = f'<li><a href="#topic-{topic_slug}">{topic_name}</a></li>'
+    return toc_li, response, f"## {topic_name}\n\n{response}"
 
 
 def generate(items: list[dict], topics: list) -> str:
@@ -92,11 +95,13 @@ def generate(items: list[dict], topics: list) -> str:
 
     toc_parts = []
     section_parts = []
+    md_parts = []
     for t in parsed:
         slug = _slug(t["name"])
-        toc_li, section = _generate_topic(items_json, t["name"], t["count"], slug)
+        toc_li, section, md = _generate_topic(items_json, t["name"], t["count"], slug)
         toc_parts.append(toc_li)
         section_parts.append(section)
+        md_parts.append(md)
 
     # Build sources summary
     source_counts: dict[str, int] = {}
@@ -112,10 +117,16 @@ def generate(items: list[dict], topics: list) -> str:
     toc_items = "\n".join(f"          {li}" for li in toc_parts)
     sections = '\n      <hr class="divider"/>\n'.join(section_parts)
 
-    return EMAIL_SHELL.format(
+    html = EMAIL_SHELL.format(
         date=date_str,
         toc_items=toc_items,
         sections=sections,
         sources_html=sources_html,
         total_n=len(items),
     )
+
+    source_names = ", ".join(source_counts.keys())
+    markdown = f"# Daily Content Digest — {date_str}\n\n_Sources: {source_names}_\n\n---\n\n" + \
+               "\n\n---\n\n".join(md_parts)
+
+    return {"html": html, "markdown": markdown}

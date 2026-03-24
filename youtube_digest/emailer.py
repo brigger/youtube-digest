@@ -25,7 +25,7 @@ def _get_password(email_cfg: dict) -> str:
     sys.exit("No password configured. Set smtp_pass_env or smtp_pass in config.yaml.")
 
 
-def send(body: str, cfg: dict, subject: str | None = None) -> None:
+def send(body: str, cfg: dict, subject: str | None = None, attachments: list[tuple[str, str]] | None = None) -> None:
     email_cfg = cfg["email"]
     from_addr = email_cfg["from"]
     to_addrs = email_cfg["to"]
@@ -47,6 +47,11 @@ def send(body: str, cfg: dict, subject: str | None = None) -> None:
         msg.attach(MIMEText(body, "html", "utf-8"))
     else:
         msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    for filename, content in (attachments or []):
+        part = MIMEText(content, "plain", "utf-8")
+        part.add_header("Content-Disposition", "attachment", filename=filename)
+        msg.attach(part)
 
     ctx = ssl.create_default_context(cafile=certifi.where())
 

@@ -17,7 +17,7 @@ The output has two parts — a TOC entry and a detail section:
 - TOC entry: lists item titles with ~200-character one-sentence summaries, each linking to the detail below.
 - Detail section: one key sentence per item plus two specific bullet points with names, numbers, or outcomes.
 
-Output EXACTLY the following format — nothing before ===TOC=== and nothing after the section HTML:
+Output EXACTLY the following format — nothing before ===TOC=== and nothing after ===MARKDOWN===:
 
 ===TOC===
 <li>
@@ -46,6 +46,19 @@ Output EXACTLY the following format — nothing before ===TOC=== and nothing aft
   <p class="nothing">Nothing relevant today.</p>
   <a href="#top" class="back-to-top">↑ Back to top</a>
 </div>
+===MARKDOWN===
+## {topic_name}
+
+[If nothing relevant:] _Nothing relevant today._
+
+[For each item:]
+### [Title]
+[source_name] | [url]
+
+[1 sentence: the single most important fact.]
+
+- **[label]:** [specific detail]
+- **[label]:** [specific detail]
 
 Items:
 {items_json}

@@ -17,12 +17,14 @@ def cmd_run(args) -> None:
 
     items = fetcher.fetch_all(cfg)
     topics = cfg.get("topics", [])
-    summary = summariser.generate(items, topics)
+    result = summariser.generate(items, topics)
 
     if args.no_email:
-        print(summary)
+        print(result["html"])
     else:
-        emailer.send(summary, cfg)
+        from datetime import date
+        filename = f"digest-{date.today().isoformat()}.md"
+        emailer.send(result["html"], cfg, attachments=[(filename, result["markdown"])])
 
 
 def cmd_init(_args) -> None:
