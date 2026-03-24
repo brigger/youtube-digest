@@ -34,7 +34,7 @@ def _run_claude(prompt: str) -> str:
     cmd = [claude_bin, "-p"]
     if os.getuid() != 0:
         cmd = [claude_bin, "--dangerously-skip-permissions", "-p"]
-    result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=300, cwd=Path.home())
+    result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=600, cwd=Path.home())
     if result.returncode != 0:
         raise RuntimeError(f"claude -p failed:\n{result.stderr}")
     return result.stdout.strip()
@@ -46,11 +46,18 @@ def _parse_topic(t) -> dict:
     return {"name": t.get("name", ""), "count": int(t.get("count", 5))}
 
 
+_MAX_TEXT_CHARS = 3000  # truncate article/transcript text to keep prompt manageable
+
+
 def generate(items: list[dict], topics: list) -> str:
     """Generate a topic-grouped digest from fetched items."""
     for item in items:
         if item.get("type") == "youtube" and "duration" in item:
             item["duration_formatted"] = _format_duration(item.get("duration"))
+        # Truncate long text fields to keep prompt size manageable
+        for field in ("text", "transcript"):
+            if field in item and len(item[field]) > _MAX_TEXT_CHARS:
+                item[field] = item[field][:_MAX_TEXT_CHARS] + "…"
 
     parsed = [_parse_topic(t) for t in topics] if topics else [{"name": "General interest", "count": 5}]
     topics_list = "\n".join(f"- {t['name']} (max {t['count']} items)" for t in parsed)
