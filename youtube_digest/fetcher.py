@@ -125,30 +125,66 @@ def fetch(channel: str, count: int = 3, cookies_file: str | None = None) -> list
     return videos
 
 
+def _make_session(cookies_file: str | None):
+    """Return a requests.Session with cookies loaded, or None if no cookies file."""
+    if not cookies_file:
+        return None
+    expanded = os.path.expanduser(cookies_file)
+    if not os.path.exists(expanded):
+        print(f"  Warning: cookies_file not found: {expanded}", file=sys.stderr)
+        return None
+    try:
+        import http.cookiejar
+        import requests
+        session = requests.Session()
+        session.headers["User-Agent"] = (
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
+        )
+        jar = http.cookiejar.MozillaCookieJar(expanded)
+        jar.load(ignore_discard=True, ignore_expires=True)
+        session.cookies = jar
+        return session
+    except Exception as e:
+        print(f"  Warning: could not load cookies from {expanded}: {e}", file=sys.stderr)
+        return None
+
+
+def _fetch_html(url: str, session=None) -> str | None:
+    """Fetch raw HTML using a requests session (with cookies) or trafilatura."""
+    if session:
+        try:
+            resp = session.get(url, timeout=20)
+            if resp.ok:
+                return resp.text
+        except Exception:
+            pass
+    import trafilatura
+    return trafilatura.fetch_url(url)
+
+
 def fetch_website(source: dict) -> list[dict]:
     """Fetch and extract text from up to `count` articles from a website."""
     import trafilatura
+    import feedparser
+    from trafilatura.feeds import find_feed_urls
 
     url = source["url"]
     count = source.get("count", 10)
     source_name = source.get("name", url)
-    base_domain = urlparse(url).netloc
+    cookies_file = source.get("cookies_file")
 
     print(f"Fetching website: {source_name} ({url})...", file=sys.stderr)
 
+    session = _make_session(cookies_file)
+
     # Collect article URLs — try URL as direct feed first, then discover feed
-    import feedparser
-    from trafilatura.feeds import find_feed_urls
-
     article_urls = []
-
-    # Try parsing the URL itself as an RSS/Atom feed
     downloaded = trafilatura.fetch_url(url)
     if downloaded:
         feed = feedparser.parse(downloaded)
         article_urls = [e.link for e in feed.entries if e.get("link")]
-
-    # If not a direct feed, discover feeds on the site
     if not article_urls:
         article_urls = find_feed_urls(url)
 
@@ -158,13 +194,13 @@ def fetch_website(source: dict) -> list[dict]:
             break
         print(f"  Scraping: {article_url}", file=sys.stderr)
         try:
-            downloaded = trafilatura.fetch_url(article_url)
-            if not downloaded:
+            html = _fetch_html(article_url, session)
+            if not html:
                 continue
-            text = trafilatura.extract(downloaded)
+            text = trafilatura.extract(html)
             if not text or len(text) < 200:
                 continue
-            metadata = trafilatura.extract_metadata(downloaded)
+            metadata = trafilatura.extract_metadata(html)
             items.append({
                 "type": "website",
                 "url": article_url,

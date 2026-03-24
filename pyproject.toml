@@ -13,6 +13,7 @@ dependencies = [
     "certifi",
     "trafilatura",
     "feedparser",
+    "requests",
 ]
 
 [project.scripts]
