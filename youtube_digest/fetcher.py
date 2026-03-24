@@ -153,7 +153,7 @@ def fetch_website(source: dict) -> list[dict]:
         article_urls = find_feed_urls(url)
 
     items = []
-    for article_url in article_urls:
+    for article_url in article_urls[:count * 2]:
         if len(items) >= count:
             break
         print(f"  Scraping: {article_url}", file=sys.stderr)
