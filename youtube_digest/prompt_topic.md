@@ -25,7 +25,7 @@ Output EXACTLY the following format — nothing before ===TOC=== and nothing aft
   [If items found, add:]
   <ul class="toc-items">
     [For each item numbered from 1:]
-    <li><a href="#item-{topic_slug}-[n]">[Title]</a> — [~200-char summary: one crisp sentence with specific names, numbers, or outcomes]</li>
+    <li style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#555;"><a href="#item-{topic_slug}-[n]" style="font-size:12px;font-weight:400;color:#555;text-decoration:underline;">[Title]</a> — [~200-char summary: one crisp sentence with specific names, numbers, or outcomes]</li>
   </ul>
   [If nothing relevant instead:] <span>Nothing relevant today.</span>
 </li>
