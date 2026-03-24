@@ -12,6 +12,10 @@ Your task:
 2. For each topic, identify items that are relevant to it.
 3. Produce a complete, standalone HTML email using the template and rules below.
 
+The email has two sections:
+- **Top (TOC):** A quick-scan overview. Each topic lists its items with a ~200-character one-sentence summary. Titles and summaries are clickable links that jump to the full detail below.
+- **Bottom (detail):** Full write-up per item — one key sentence plus two specific bullet points.
+
 Output rules:
 - Output ONLY the raw HTML — no explanation, no ```html fences, nothing before <!DOCTYPE or after </html>.
 - The email must be self-contained with all CSS inlined in a <style> block in <head>.
