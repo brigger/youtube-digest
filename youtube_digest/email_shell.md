@@ -14,12 +14,12 @@
     .toc ul {{ margin:0; padding:0; list-style:none; }}
     .toc ul li {{ padding:5px 0; border-bottom:1px solid #e8ecf2; }}
     .toc ul li:last-child {{ border-bottom:none; }}
-    .toc ul li > a {{ font-family:Helvetica,Arial,sans-serif; font-size:13px; font-weight:700; color:#4a6fa5; text-decoration:none; }}
+    .toc ul li > a {{ font-family:Helvetica,Arial,sans-serif; font-size:15px; font-weight:700; color:#4a6fa5; text-decoration:none; }}
     .toc ul li > a:hover {{ text-decoration:underline; }}
     .toc ul li span {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; color:#999; font-style:italic; display:block; margin-top:2px; }}
     .toc-items {{ margin:6px 0 2px 0; padding:0 0 0 14px; list-style:none; }}
-    .toc-items li {{ padding:3px 0; border-bottom:none; }}
-    .toc-items li a {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; font-weight:400; color:#333; text-decoration:none; }}
+    .toc-items li {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; color:#555; padding:3px 0; border-bottom:none; }}
+    .toc-items li a {{ font-size:12px; font-weight:600; color:#333; text-decoration:none; }}
     .toc-items li a:hover {{ text-decoration:underline; color:#4a6fa5; }}
     .topic-label {{ font-family:Helvetica,Arial,sans-serif; font-size:14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#fff; background:#4a6fa5; display:inline-block; padding:6px 14px; border-radius:3px; margin-bottom:20px; }}
     .back-to-top {{ font-family:Helvetica,Arial,sans-serif; font-size:11px; color:#4a6fa5; text-decoration:none; display:block; text-align:right; margin-top:8px; margin-bottom:0; }}
