@@ -34,7 +34,7 @@ def _run_claude(prompt: str) -> str:
     cmd = [claude_bin, "-p"]
     if os.getuid() != 0:
         cmd = [claude_bin, "--dangerously-skip-permissions", "-p"]
-    result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=300)
+    result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=300, cwd=Path.home())
     if result.returncode != 0:
         raise RuntimeError(f"claude -p failed:\n{result.stderr}")
     return result.stdout.strip()
