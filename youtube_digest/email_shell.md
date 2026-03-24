@@ -21,7 +21,7 @@
     .toc-items li {{ padding:3px 0; border-bottom:none; }}
     .toc-items li a {{ font-family:Helvetica,Arial,sans-serif; font-size:12px; font-weight:400; color:#333; text-decoration:none; }}
     .toc-items li a:hover {{ text-decoration:underline; color:#4a6fa5; }}
-    .topic-label {{ font-family:Helvetica,Arial,sans-serif; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#fff; background:#4a6fa5; display:inline-block; padding:4px 10px; border-radius:3px; margin-bottom:20px; }}
+    .topic-label {{ font-family:Helvetica,Arial,sans-serif; font-size:14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:#fff; background:#4a6fa5; display:inline-block; padding:6px 14px; border-radius:3px; margin-bottom:20px; }}
     .back-to-top {{ font-family:Helvetica,Arial,sans-serif; font-size:11px; color:#4a6fa5; text-decoration:none; display:block; text-align:right; margin-top:8px; margin-bottom:0; }}
     .item {{ border-left:3px solid #e8ecf2; padding:0 0 0 18px; margin-bottom:32px; }}
     .item h2 {{ font-family:Helvetica,Arial,sans-serif; font-size:15px; font-weight:700; margin:0 0 4px; color:#1a1a2e; line-height:1.35; }}

@@ -10,7 +10,7 @@ Each item has "type", "title", "url", "source_name", and "text" or "transcript".
 Rules:
 - Find items relevant to this topic. If none, say so.
 - An item counts as relevant if it meaningfully relates to the topic.
-- If a transcript is in German, summarise in English.
+- Keep summaries in the original language of the source — do not translate.
 - Do not invent information not present in the content.
 
 The output has two parts — a TOC entry and a detail section:
